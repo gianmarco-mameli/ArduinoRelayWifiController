@@ -1,0 +1,69 @@
+{
+ "version": 1,
+ "author": "Pippo",
+ "editor": "wokwi",
+ "parts": [
+  {
+   "type": "wokwi-arduino-uno",
+   "id": "uno",
+   "top": 59.34,
+   "left": -43.34,
+   "attrs": {}
+  },
+  {
+   "type": "wokwi-lcd1602",
+   "id": "lcd1",
+   "top": -117.74,
+   "left": 202.53,
+   "attrs": {
+    "pins": "i2c"
+   }
+  }
+ ],
+ "connections": [
+  [
+   "lcd1:VCC",
+   "uno:5V",
+   "red",
+   [
+    "h-9.6",
+    "v163.3"
+   ]
+  ],
+  [
+   "lcd1:GND",
+   "uno:GND",
+   "black",
+   [
+    "h-19.2",
+    "v163.2"
+   ]
+  ],
+  [
+   "lcd1:SDA",
+   "uno:A4",
+   "goldenrod",
+   [
+    "h-28.8",
+    "v-76.6",
+    "h-137.4",
+    "v124.8"
+   ]
+  ],
+  [
+   "lcd1:SCL",
+   "uno:A5",
+   "purple",
+   [
+    "h-38.4",
+    "v-95.7",
+    "h-134.4",
+    "v144"
+   ]
+  ]
+ ],
+ "serialMonitor": {
+  "display": "terminal",
+  "newline": "lf"
+ }
+}
