@@ -1,6 +1,7 @@
 #include <SoftwareSerial.h>
 #include <Arduino.h>
-#include <WiFiEsp.h>
+// #include <WiFiEsp.h>
+#include <WiFiEspAT.h>
 #include <LiquidCrystal_I2C.h>
 #include <PubSubClient.h>
 
@@ -8,7 +9,7 @@
 const char ssid[] = SECRET_SSID;
 const char pass[] = SECRET_PASS;
 
-const char *mqtt_broker = "mosquitto.docker.local";
+const char *mqtt_broker = "192.168.1.1";
 const int mqtt_port = 1883;
 const char *client_id = "rpiext_extrarelays";
 const char *status_topic = "rpiext_extrarelays/status";
@@ -17,7 +18,7 @@ const long interval = 1000;
 unsigned long previousMillis = 0;
 
 const char *t_temperature = "modul/temperature";
-char *temperature;
+float temperature;
 
 const char *t_motion = "veranda/motion";
 char *motion;
@@ -26,6 +27,11 @@ const char *t_pump5 =  "rpiext/pump/5";
 const char *t_pump6 =  "rpiext/pump/6";
 const char *t_pump7 =  "rpiext/pump/7";
 const char *t_pump8 =  "rpiext/pump/8";
+
+int pump5;
+int pump6;
+int pump7;
+int pump8;
 
 String pump = "0";
 char *topic;
@@ -37,10 +43,16 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 #define relay3 5
 #define relay4 4
 
-WiFiEspClient espClient;
+WiFiClient espClient;
 PubSubClient client(espClient);
 
+#if defined(ARDUINO_ARCH_AVR) && !defined(HAVE_HWSERIAL1)
+#include <SoftwareSerial.h>
 SoftwareSerial soft(13, 12); // RX, TX
+#define AT_BAUD_RATE 9600
+#else
+#define AT_BAUD_RATE 115200
+#endif
 
 unsigned long timeout = 200;
 unsigned long screensaver = timeout;
@@ -48,9 +60,36 @@ int status = WL_IDLE_STATUS;
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
+  // Serial.println(topic);
+  // String msg;
+  // for (unsigned int i = 0; i < length; i++)
+  // {
+  //   msg = msg + (char)payload[i]; // convert *byte to string
+  // }
+
   if (strcmp(topic,t_temperature)==0) {
-    temperature = ((char*)payload);
-    Serial.println(temperature);
+    temperature = atof(((char*)payload));
+    // Serial.println(temperature);
+  }
+  if (strcmp(topic,t_pump5)==0) {
+    pump5 = atoi(((char*)payload));
+    digitalWrite(relay1, pump5);
+    // Serial.println(pump);
+  }
+  if (strcmp(topic,t_pump6)==0) {
+    pump6 = atoi(((char*)payload));
+    digitalWrite(relay2, pump6);
+    // Serial.println(pump6);
+  }
+  if (strcmp(topic,t_pump7)==0) {
+    pump7 = atoi(((char*)payload));
+    digitalWrite(relay3, pump7);
+    // Serial.println(pump7);
+  }
+    if (strcmp(topic,t_pump8)==0) {
+    pump8 = atoi(((char*)payload));
+    digitalWrite(relay4, pump8);
+    // Serial.println(pump8);
   }
   // if (strcmp(topic,t_humidity)==0) {
   //   humidity = ((char*)payload);
@@ -61,9 +100,10 @@ void callback(char *topic, byte *payload, unsigned int length)
 }
 void InitWiFi()
 {
-  soft.begin(115200);
-  soft.write("AT+UART=9600,8,1,0,0\r\n");
-  soft.begin(9600);
+  // soft.begin(115200);
+  // soft.write("AT+UART=9600,8,1,0,0\r\n");
+  soft.begin(AT_BAUD_RATE);
+  delay(500);
   WiFi.init(&soft);
   if (WiFi.status() == WL_NO_SHIELD)
   {
@@ -100,6 +140,15 @@ void reconnect()
     {
       Serial.println("MQTT broker connected");
       client.publish(status_topic, "connected");
+      client.publish(t_pump5,"0");
+      client.publish(t_pump6,"0");
+      client.publish(t_pump7,"0");
+      client.publish(t_pump8,"0");
+      client.subscribe(t_temperature);
+      client.subscribe(t_pump5);
+      client.subscribe(t_pump6);
+      client.subscribe(t_pump7);
+      client.subscribe(t_pump8);
     }
     else
     {
@@ -108,12 +157,14 @@ void reconnect()
       delay(5000);
     }
   }
+
+
 }
 
 void InitMqtt()
 {
   client.setServer(mqtt_broker, mqtt_port);
-  // client.setCallback(callback);
+  client.setCallback(callback);
   reconnect();
 }
 
@@ -138,13 +189,6 @@ void setup()
   InitWiFi();
   delay(1000);
   InitMqtt();
-
-  client.subscribe(t_temperature);
-  client.subscribe(t_pump5);
-  client.subscribe(t_pump6);
-  client.subscribe(t_pump7);
-  client.subscribe(t_pump8);
-
 }
 
 void loop()
@@ -161,38 +205,41 @@ void loop()
     }
     client.loop();
 
+    lcd.backlight();
     lcd.setCursor(0, 0);
-    // lcd.print("Ext Temp " + temperature);
+    lcd.print("Ext Temp ");
     // lcd.print("123456789123456");
     // lcd.setCursor(5, 0);
     lcd.print(temperature);
 
-    lcd.setCursor(0, 1);
+    // Serial.println(temperature);
 
-    if (strcmp(topic, t_pump5) == 0)
-    {
-      digitalWrite(relay1, pump.toInt());
-      lcd.print(topic + pump);
-      lcd.backlight();
-    }
-    if (strcmp(topic, t_pump6) == 0)
-    {
-      digitalWrite(relay2, pump.toInt());
-      lcd.print(topic + pump);
-      lcd.backlight();
-    }
-    if (strcmp(topic, t_pump7) == 0)
-    {
-      digitalWrite(relay3, pump.toInt());
-      lcd.print(topic + pump);
-      lcd.backlight();
-    }
-    if (strcmp(topic, t_pump8) == 0)
-    {
-      digitalWrite(relay4, pump.toInt());
-      lcd.print(topic + pump);
-      lcd.backlight();
-    }
+    // lcd.setCursor(0, 1);
+
+    // if (strcmp(topic, t_pump5) == 0)
+    // {
+    //   digitalWrite(relay1, pump.toInt());
+    //   // lcd.print(topic + pump);
+    //   // lcd.backlight();
+    // }
+    // if (strcmp(topic, t_pump6) == 0)
+    // {
+    //   digitalWrite(relay2, pump.toInt());
+    //   // lcd.print(topic + pump);
+    //   // lcd.backlight();
+    // }
+    // if (strcmp(topic, t_pump7) == 0)
+    // {
+    //   digitalWrite(relay3, pump.toInt());
+    //   // lcd.print(topic + pump);
+    //   // lcd.backlight();
+    // }
+    // if (strcmp(topic, t_pump8) == 0)
+    // {
+    //   digitalWrite(relay4, pump.toInt());
+    //   // lcd.print(topic + pump);
+    //   // lcd.backlight();
+    // }
     // if (payload == 0)
 
     // Serial.println(temperature);
