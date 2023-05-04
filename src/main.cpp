@@ -9,21 +9,20 @@ const char ssid[] = SECRET_SSID;
 const char pass[] = SECRET_PASS;
 
 const char *mqtt_broker = "192.168.1.1";
-const int mqtt_port = 1883;
 const char *client_id = "rpiext_extrarelays";
 const char *status_topic = "rpiext_extrarelays/status";
 
-const long interval = 2000;
+const int interval = 2000;
 unsigned long previousMillis = 0;
 bool backlightState = false;
 unsigned long backlightStartTime = 0;
-int counter = 0;
+uint8_t counter = 0;
 
 const char *t_temperature = "modul/temperature";
 float temperature;
 
 const char *t_humidity = "modul/humidity";
-int humidity;
+uint8_t humidity;
 
 const char *t_motion = "veranda/motion";
 bool motion = 0;
@@ -33,12 +32,10 @@ const char *t_pump6 = "rpiext/pump/6";
 const char *t_pump7 = "rpiext/pump/7";
 const char *t_pump8 = "rpiext/pump/8";
 
-int pump5 = 0;
-int pump6 = 0;
-int pump7 = 0;
-int pump8 = 0;
-
-char *topic;
+bool pump5 = 0;
+bool pump6 = 0;
+bool pump7 = 0;
+bool pump8 = 0;
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 char line0[17];
@@ -52,22 +49,16 @@ char line1[17];
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-#if defined(ARDUINO_ARCH_AVR) && !defined(HAVE_HWSERIAL1)
-#include <SoftwareSerial.h>
 SoftwareSerial soft(13, 12); // RX, TX
-#define AT_BAUD_RATE 9600
-#else
-#define AT_BAUD_RATE 115200
-#endif
 
-unsigned long timeout = 200;
-unsigned long blTimeout = 5000;
-int status = WL_IDLE_STATUS;
+// uint8_t timeout = 200;
+unsigned int blTimeout = 5000;
+// uint8_t status = WL_IDLE_STATUS;
 
 void callback(char *topic, byte *payload, unsigned int length)
 {
-  char in_message[5];
-  unsigned int i = 0;
+  char in_message[length];
+  uint8_t i = 0;
   for (; i < length; i++)
   {
     in_message[i] = char(payload[i]);
@@ -136,33 +127,29 @@ void callback(char *topic, byte *payload, unsigned int length)
 
 void InitWiFi()
 {
-  // soft.begin(115200);
-  // soft.write("AT+UART=9600,8,1,0,0\r\n");
-  soft.begin(AT_BAUD_RATE);
+  soft.begin(9600);
   delay(500);
   WiFi.init(&soft);
   if (WiFi.status() == WL_NO_SHIELD)
   {
-    Serial.println();
-    Serial.println("Communication with WiFi module failed!");
+    Serial.println(F("Communication with WiFi module failed!"));
     while (true)
       ;
   }
-  if (WiFi.status() != WL_CONNECTED)
+  while (WiFi.status() != WL_CONNECTED)
   {
-    Serial.println();
-    Serial.print("Attempting to connect to WPA SSID: ");
+    Serial.print(F("Attempting to connect to WPA SSID: "));
     Serial.println(ssid);
-    int status = WiFi.begin(ssid, pass);
+    uint8_t status = WiFi.begin(ssid, pass);
     Serial.println();
 
     if (status != WL_CONNECTED)
     {
-      Serial.println("Failed to connect to AP");
+      Serial.println(F("Failed to connect to AP"));
     }
     else
     {
-      Serial.println("You're connected to the network");
+      Serial.println(F("You're connected to the network"));
       Serial.println(WiFi.localIP());
     }
   }
@@ -174,7 +161,7 @@ void reconnect()
   {
     if (client.connect(client_id))
     {
-      Serial.println("MQTT broker connected");
+      Serial.println(F("MQTT broker connected"));
       client.publish(status_topic, "connected");
       client.publish(t_pump5, "0");
       client.publish(t_pump6, "0");
@@ -190,7 +177,7 @@ void reconnect()
     }
     else
     {
-      Serial.print("failed with state ");
+      Serial.print(F("failed with state "));
       Serial.print(client.state());
       delay(5000);
       InitWiFi();
@@ -200,7 +187,7 @@ void reconnect()
 
 void InitMqtt()
 {
-  client.setServer(mqtt_broker, mqtt_port);
+  client.setServer(mqtt_broker, 1883);
   client.setCallback(callback);
   reconnect();
 }
@@ -217,7 +204,6 @@ void setup()
   digitalWrite(relay4, 0);
 
   lcd.init();
-  // lcd.clear();
   lcd.backlight();
   backlightState = true;
   backlightStartTime = millis();
@@ -230,10 +216,11 @@ void setup()
   InitMqtt();
 }
 
-void updateDisplay() {
-  lcd.setCursor(0,0);
+void updateDisplay()
+{
+  lcd.setCursor(0, 0);
   lcd.print(line0);
-  lcd.setCursor(0,1);
+  lcd.setCursor(0, 1);
   lcd.print(line1);
 }
 
@@ -256,7 +243,7 @@ void loop()
       lcd.backlight();
       backlightState = true;
       backlightStartTime = millis();
-      // Serial.println("BL");
+      // Serial.println(F("BL"));
       // Serial.println(motion);
     }
     if (pump5 || pump6 || pump7 || pump8)
@@ -274,7 +261,7 @@ void loop()
       // lcd.clear();
       backlightState = false;
       lcd.noBacklight();
-      Serial.println("NO BL");
+      Serial.println(F("NO BL"));
       lcd.clear();
     }
     if (!pump5 && !pump6 && !pump7 && !pump8)
