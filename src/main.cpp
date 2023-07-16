@@ -8,11 +8,6 @@
 const char ssid[] = SECRET_SSID;
 const char pass[] = SECRET_PASS;
 
-const char *mqtt_broker = "192.168.1.1";
-const char *client_id = "rpiext_extrarelays";
-const char *status_topic = "rpiext_extrarelays/status";
-
-const int interval = 2000;
 unsigned long previousMillis = 0;
 bool backlightState = false;
 unsigned long backlightStartTime = 0;
@@ -38,8 +33,9 @@ bool pump7 = 0;
 bool pump8 = 0;
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
-char line0[17];
-char line1[17];
+// LiquidCrystal_I2C lcd(0x27);
+char line0[17] = "";
+char line1[17] = "";
 
 #define relay1 7
 #define relay2 6
@@ -51,34 +47,18 @@ PubSubClient client(espClient);
 
 SoftwareSerial soft(13, 12); // RX, TX
 
-// uint8_t timeout = 200;
-unsigned int blTimeout = 5000;
-// uint8_t status = WL_IDLE_STATUS;
-
 void callback(char *topic, byte *payload, unsigned int length)
 {
-  char in_message[length];
-  uint8_t i = 0;
+  char in_message[5];
+  unsigned int i = 0;
   for (; i < length; i++)
   {
     in_message[i] = char(payload[i]);
   }
   in_message[i] = '\0';
-
+  // Serial.println(in_message);
   lcd.setCursor(0, 0);
   motion = 0;
-  if (strcmp(topic, t_motion) == 0)
-  {
-    motion = bool(in_message);
-  }
-  if (strcmp(topic, t_temperature) == 0)
-  {
-    temperature = atof(in_message);
-  }
-  if (strcmp(topic, t_humidity) == 0)
-  {
-    humidity = atoi(in_message);
-  }
   if (strcmp(topic, t_pump5) == 0)
   {
     pump5 = atoi(in_message);
@@ -101,7 +81,7 @@ void callback(char *topic, byte *payload, unsigned int length)
       counter = 0;
     }
   }
-  if (strcmp(topic, t_pump5) == 0)
+  if (strcmp(topic, t_pump7) == 0)
   {
     pump7 = atoi(in_message);
     digitalWrite(relay1, pump7);
@@ -122,6 +102,19 @@ void callback(char *topic, byte *payload, unsigned int length)
       lcd.print(F("Pump 8 ON"));
       counter = 0;
     }
+  }
+  if (strcmp(topic, t_motion) == 0)
+  {
+    motion = bool(in_message);
+  }
+  if (strcmp(topic, t_temperature) == 0)
+  {
+    temperature = atof(in_message);
+
+  }
+  if (strcmp(topic, t_humidity) == 0)
+  {
+    humidity = atoi(in_message);
   }
 }
 
@@ -159,10 +152,10 @@ void reconnect()
 {
   while (!client.connected())
   {
-    if (client.connect(client_id))
+    if (client.connect("rpiext_extrarelays"))
     {
       Serial.println(F("MQTT broker connected"));
-      client.publish(status_topic, "connected");
+      client.publish("rpiext_extrarelays/status", "connected");
       client.publish(t_pump5, "0");
       client.publish(t_pump6, "0");
       client.publish(t_pump7, "0");
@@ -187,7 +180,7 @@ void reconnect()
 
 void InitMqtt()
 {
-  client.setServer(mqtt_broker, 1883);
+  client.setServer("192.168.1.1", 1883);
   client.setCallback(callback);
   reconnect();
 }
@@ -222,13 +215,14 @@ void updateDisplay()
   lcd.print(line0);
   lcd.setCursor(0, 1);
   lcd.print(line1);
+  // lcd.on();
 }
 
 void loop()
 {
   unsigned long currentMillis = millis();
 
-  if (currentMillis - previousMillis >= interval)
+  if (currentMillis - previousMillis >= 2000)
   {
     previousMillis = currentMillis;
 
@@ -243,7 +237,7 @@ void loop()
       lcd.backlight();
       backlightState = true;
       backlightStartTime = millis();
-      // Serial.println(F("BL"));
+      Serial.println(F("BL"));
       // Serial.println(motion);
     }
     if (pump5 || pump6 || pump7 || pump8)
@@ -256,7 +250,7 @@ void loop()
       lcd.print(counter);
       lcd.print(F(" seconds on"));
     }
-    if (backlightState == true && millis() - backlightStartTime >= blTimeout && (!pump5 && !pump6 && !pump7 && !pump8))
+    if (backlightState == true && millis() - backlightStartTime >= 5000 && (!pump5 && !pump6 && !pump7 && !pump8))
     {
       // lcd.clear();
       backlightState = false;
@@ -266,12 +260,12 @@ void loop()
     }
     if (!pump5 && !pump6 && !pump7 && !pump8)
     {
-      // lcd.setCursor(0, 0);
-      char tBuffer[15];
+      char tBuffer[20];
       dtostrf(temperature, 2, 1, tBuffer);
       sprintf(line0, "Ext Temp: %5s%c", tBuffer, char(223));
       sprintf(line1, "Ext Hum: %6d%%", humidity);
       updateDisplay();
+      // Serial.println(temperature);
     }
   }
 }
