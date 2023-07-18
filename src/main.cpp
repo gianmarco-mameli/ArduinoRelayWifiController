@@ -33,7 +33,6 @@ bool pump7 = 0;
 bool pump8 = 0;
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
-// LiquidCrystal_I2C lcd(0x27);
 char line0[17] = "";
 char line1[17] = "";
 
@@ -47,6 +46,15 @@ PubSubClient client(espClient);
 
 SoftwareSerial soft(13, 12); // RX, TX
 
+void print_pump(uint8_t pump_number)
+{
+  lcd.setCursor(0, 0);
+  lcd.clear();
+  lcd.print(F("Pump ON #"));
+  lcd.print(pump_number);
+  counter = 0;
+}
+
 void callback(char *topic, byte *payload, unsigned int length)
 {
   char in_message[5];
@@ -57,7 +65,7 @@ void callback(char *topic, byte *payload, unsigned int length)
   }
   in_message[i] = '\0';
   // Serial.println(in_message);
-  lcd.setCursor(0, 0);
+
   motion = 0;
   if (strcmp(topic, t_pump5) == 0)
   {
@@ -65,42 +73,34 @@ void callback(char *topic, byte *payload, unsigned int length)
     digitalWrite(relay1, pump5);
     if (pump5)
     {
-      lcd.clear();
-      lcd.print(F("Pump 5 ON"));
-      counter = 0;
+      print_pump(5);
     }
   }
   if (strcmp(topic, t_pump6) == 0)
   {
     pump6 = atoi(in_message);
-    digitalWrite(relay1, pump6);
+    digitalWrite(relay2, pump6);
     if (pump6)
     {
-      lcd.clear();
-      lcd.print(F("Pump 6 ON"));
-      counter = 0;
+      print_pump(6);
     }
   }
   if (strcmp(topic, t_pump7) == 0)
   {
     pump7 = atoi(in_message);
-    digitalWrite(relay1, pump7);
+    digitalWrite(relay3, pump7);
     if (pump7)
     {
-      lcd.clear();
-      lcd.print(F("Pump 7 ON"));
-      counter = 0;
+      print_pump(7);
     }
   }
   if (strcmp(topic, t_pump8) == 0)
   {
     pump8 = atoi(in_message);
-    digitalWrite(relay1, pump8);
+    digitalWrite(relay4, pump8);
     if (pump8)
     {
-      lcd.clear();
-      lcd.print(F("Pump 8 ON"));
-      counter = 0;
+      print_pump(8);
     }
   }
   if (strcmp(topic, t_motion) == 0)
@@ -110,7 +110,6 @@ void callback(char *topic, byte *payload, unsigned int length)
   if (strcmp(topic, t_temperature) == 0)
   {
     temperature = atof(in_message);
-
   }
   if (strcmp(topic, t_humidity) == 0)
   {
@@ -215,14 +214,13 @@ void updateDisplay()
   lcd.print(line0);
   lcd.setCursor(0, 1);
   lcd.print(line1);
-  // lcd.on();
 }
 
 void loop()
 {
   unsigned long currentMillis = millis();
 
-  if (currentMillis - previousMillis >= 2000)
+  if (currentMillis - previousMillis >= 1000)
   {
     previousMillis = currentMillis;
 
@@ -252,7 +250,6 @@ void loop()
     }
     if (backlightState == true && millis() - backlightStartTime >= 5000 && (!pump5 && !pump6 && !pump7 && !pump8))
     {
-      // lcd.clear();
       backlightState = false;
       lcd.noBacklight();
       Serial.println(F("NO BL"));
@@ -265,7 +262,6 @@ void loop()
       sprintf(line0, "Ext Temp: %5s%c", tBuffer, char(223));
       sprintf(line1, "Ext Hum: %6d%%", humidity);
       updateDisplay();
-      // Serial.println(temperature);
     }
   }
 }
