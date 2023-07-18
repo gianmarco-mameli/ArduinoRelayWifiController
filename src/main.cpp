@@ -248,7 +248,7 @@ void loop()
       lcd.print(counter);
       lcd.print(F(" seconds on"));
     }
-    if (backlightState == true && millis() - backlightStartTime >= 5000 && (!pump5 && !pump6 && !pump7 && !pump8))
+    if (backlightState == true && millis() - backlightStartTime >= 8000 && (!pump5 && !pump6 && !pump7 && !pump8))
     {
       backlightState = false;
       lcd.noBacklight();
