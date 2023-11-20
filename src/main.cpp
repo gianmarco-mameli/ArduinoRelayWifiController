@@ -1,8 +1,8 @@
 #include <SoftwareSerial.h>
 #include <Arduino.h>
 #include <WiFiEspAT.h>
-#include <LiquidCrystal_I2C.h>
 #include <PubSubClient.h>
+#include <LiquidCrystal_I2C.h>
 
 #include <private.h>
 const char ssid[] = SECRET_SSID;
@@ -64,8 +64,6 @@ void callback(char *topic, byte *payload, unsigned int length)
     in_message[i] = char(payload[i]);
   }
   in_message[i] = '\0';
-  // Serial.println(in_message);
-
   motion = 0;
   if (strcmp(topic, t_pump5) == 0)
   {
@@ -236,7 +234,6 @@ void loop()
       backlightState = true;
       backlightStartTime = millis();
       Serial.println(F("BL"));
-      // Serial.println(motion);
     }
     if (pump5 || pump6 || pump7 || pump8)
     {
@@ -253,7 +250,6 @@ void loop()
       backlightState = false;
       lcd.noBacklight();
       Serial.println(F("NO BL"));
-      lcd.clear();
     }
     if (!pump5 && !pump6 && !pump7 && !pump8)
     {
