@@ -152,7 +152,6 @@ void reconnect()
     if (client.connect("rpiext_extrarelays"))
     {
       Serial.println(F("MQTT broker connected"));
-      client.publish("rpiext_extrarelays/status", "connected");
       client.publish(t_pump5, "0");
       client.publish(t_pump6, "0");
       client.publish(t_pump7, "0");
@@ -234,6 +233,7 @@ void loop()
       backlightState = true;
       backlightStartTime = millis();
       Serial.println(F("BL"));
+      client.publish("rpiext_extrarelays/status", "on");
     }
     if (pump5 || pump6 || pump7 || pump8)
     {
@@ -244,12 +244,14 @@ void loop()
       lcd.setCursor(0, 1);
       lcd.print(counter);
       lcd.print(F(" seconds on"));
+      client.publish("rpiext_extrarelays/status", "pump_on");
     }
     if (backlightState == true && millis() - backlightStartTime >= 8000 && (!pump5 && !pump6 && !pump7 && !pump8))
     {
       backlightState = false;
       lcd.noBacklight();
       Serial.println(F("NO BL"));
+      client.publish("rpiext_extrarelays/status", "off");
     }
     if (!pump5 && !pump6 && !pump7 && !pump8)
     {
@@ -258,6 +260,7 @@ void loop()
       sprintf(line0, "Ext Temp: %5s%c", tBuffer, char(223));
       sprintf(line1, "Ext Hum: %6d%%", humidity);
       updateDisplay();
+      client.publish("rpiext_extrarelays/status", "connected");
     }
   }
 }
