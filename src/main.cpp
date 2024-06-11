@@ -36,10 +36,10 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 char line0[17] = "";
 char line1[17] = "";
 
-#define relay1 7
-#define relay2 6
-#define relay3 5
-#define relay4 4
+#define relay1 PCINT23
+#define relay2 PCINT22
+#define relay3 PCINT21
+#define relay4 PCINT20
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -168,7 +168,7 @@ void reconnect()
     {
       Serial.print(F("failed with state "));
       Serial.print(client.state());
-      delay(5000);
+      delay(2000);
       InitWiFi();
     }
   }
@@ -183,6 +183,10 @@ void InitMqtt()
 
 void setup()
 {
+  pinMode(relay1, INPUT_PULLUP);
+  pinMode(relay2, INPUT_PULLUP);
+  pinMode(relay3, INPUT_PULLUP);
+  pinMode(relay4, INPUT_PULLUP);
   pinMode(relay1, OUTPUT);
   pinMode(relay2, OUTPUT);
   pinMode(relay3, OUTPUT);
@@ -217,7 +221,7 @@ void loop()
 {
   unsigned long currentMillis = millis();
 
-  if (currentMillis - previousMillis >= 1000)
+  if (currentMillis - previousMillis >= 500)
   {
     previousMillis = currentMillis;
 
