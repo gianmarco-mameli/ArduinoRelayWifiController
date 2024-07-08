@@ -9,8 +9,8 @@ const char ssid[] = SECRET_SSID;
 const char pass[] = SECRET_PASS;
 
 unsigned long previousMillis = 0;
-bool backlightState = false;
-unsigned long backlightStartTime = 0;
+// bool backlightState = false;
+// unsigned long backlightStartTime = 0;
 uint8_t counter = 0;
 
 const char *t_temperature = "modul/temperature";
@@ -19,8 +19,8 @@ float temperature;
 const char *t_humidity = "modul/humidity";
 uint8_t humidity;
 
-const char *t_motion = "veranda/motion";
-bool motion = 0;
+// const char *t_motion = "veranda/motion";
+// bool motion = 0;
 
 const char *t_pump5 = "rpiext/pump/5";
 const char *t_pump6 = "rpiext/pump/6";
@@ -64,7 +64,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     in_message[i] = char(payload[i]);
   }
   in_message[i] = '\0';
-  motion = 0;
+  // motion = 0;
   if (strcmp(topic, t_pump5) == 0)
   {
     pump5 = atoi(in_message);
@@ -101,10 +101,10 @@ void callback(char *topic, byte *payload, unsigned int length)
       print_pump(8);
     }
   }
-  if (strcmp(topic, t_motion) == 0)
-  {
-    motion = bool(in_message);
-  }
+  // if (strcmp(topic, t_motion) == 0)
+  // {
+  //   motion = bool(in_message);
+  // }
   if (strcmp(topic, t_temperature) == 0)
   {
     temperature = atof(in_message);
@@ -158,7 +158,7 @@ void reconnect()
       client.publish(t_pump8, "0");
       client.subscribe(t_temperature);
       client.subscribe(t_humidity);
-      client.subscribe(t_motion);
+      // client.subscribe(t_motion);
       client.subscribe(t_pump5);
       client.subscribe(t_pump6);
       client.subscribe(t_pump7);
@@ -198,8 +198,8 @@ void setup()
 
   lcd.init();
   lcd.backlight();
-  backlightState = true;
-  backlightStartTime = millis();
+  // backlightState = true;
+  // backlightStartTime = millis();
 
   Serial.begin(9600);
 
@@ -231,32 +231,32 @@ void loop()
     }
     client.loop();
 
-    if (motion)
-    {
-      lcd.backlight();
-      backlightState = true;
-      backlightStartTime = millis();
-      Serial.println(F("BL"));
-      client.publish("rpiext_extrarelays/status", "on");
-    }
+    // if (motion)
+    // {
+    //   lcd.backlight();
+    //   backlightState = true;
+    //   backlightStartTime = millis();
+    //   Serial.println(F("BL"));
+    //   client.publish("rpiext_extrarelays/status", "on");
+    // }
     if (pump5 || pump6 || pump7 || pump8)
     {
-      lcd.backlight();
-      backlightState = true;
-      backlightStartTime = millis();
+      // lcd.backlight();
+      // backlightState = true;
+      // backlightStartTime = millis();
       counter++;
       lcd.setCursor(0, 1);
       lcd.print(counter);
       lcd.print(F(" seconds on"));
       client.publish("rpiext_extrarelays/status", "pump_on");
     }
-    if (backlightState == true && millis() - backlightStartTime >= 8000 && (!pump5 && !pump6 && !pump7 && !pump8))
-    {
-      backlightState = false;
-      lcd.noBacklight();
-      Serial.println(F("NO BL"));
-      client.publish("rpiext_extrarelays/status", "off");
-    }
+    // if (backlightState == true && millis() - backlightStartTime >= 8000 && (!pump5 && !pump6 && !pump7 && !pump8))
+    // {
+    //   backlightState = false;
+    //   lcd.noBacklight();
+    //   Serial.println(F("NO BL"));
+    //   client.publish("rpiext_extrarelays/status", "off");
+    // }
     if (!pump5 && !pump6 && !pump7 && !pump8)
     {
       char tBuffer[20];
